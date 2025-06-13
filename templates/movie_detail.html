@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title }}{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #121212;
+        color: #f5c518;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .movie-detail {
+        background: #1a1a1a;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        color: #f5c518;
+    }
+
+    .movie-header {
+        display: flex;
+        gap: 20px;
+    }
+
+    .movie-poster {
+        width: 300px;
+        height: auto;
+        border-radius: 4px;
+        border: 2px solid #f5c518;
+    }
+
+    .movie-info {
+        flex: 1;
+    }
+
+    .movie-title {
+        font-size: 2.5em;
+        margin: 0;
+        color: #f5c518;
+    }
+
+    .tagline {
+        font-style: italic;
+        color: #cccccc;
+    }
+
+    .overview {
+        margin: 10px 0;
+        color: #dddddd;
+    }
+
+    .movie-meta {
+        margin: 15px 0;
+        font-size: 1em;
+        color: #aaaaaa;
+    }
+
+    .genre {
+        display: inline-block;
+        background-color: #f5c518;
+        color: black;
+        border-radius: 3px;
+        padding: 3px 6px;
+        margin-right: 5px;
+        font-size: 0.9em;
+    }
+
+    .rating-input {
+        margin-top: 10px;
+    }
+
+    .rating-input input {
+        width: 50px;
+        padding: 5px;
+        margin-right: 5px;
+    }
+
+    .back-button {
+        background-color: #f5c518;
+        color: black;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .back-button:hover {
+        background-color: #ffd700;
+    }
+
+    .recommendations {
+        margin-top: 40px;
+    }
+
+    .recommendations h2 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        color: #f5c518;
+    }
+
+    .recommendation-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px;
+    }
+
+    .recommendation-item {
+        background: #1a1a1a;
+        border-radius: 8px;
+        border: 2px solid #f5c518;
+        overflow: hidden;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .recommendation-item:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(245, 197, 24, 0.5);
+    }
+
+    .recommendation-item img {
+        width: 100%;
+        height: auto;
+    }
+
+    .recommendation-item h3 {
+        font-size: 1em;
+        margin: 10px 0;
+        color: #f5c518;
+    }
+
+    .recommendation-item a {
+        display: inline-block;
+        margin-bottom: 10px;
+        color: #f5c518;
+        text-decoration: none;
+    }
+
+    .recommendation-item a:hover {
+        text-decoration: underline;
+    }
+	.messages {
+    list-style: none;
+    padding: 10px;
+    margin: 10px 0;
+}
+.success {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+}
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+}
+
+</style>
+
+<div class="container">
+    <div class="movie-detail">
+        <div class="movie-header">
+            <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+            <div class="movie-info">
+                <h1 class="movie-title">{{ movie.title }}</h1>
+                {% if movie.tagline %}
+                <p class="tagline">"{{ movie.tagline }}"</p>
+                {% endif %}
+                <p class="overview">{{ movie.overview }}</p>
+                <div class="movie-meta">
+                    <p><strong>Release Date:</strong> {{ movie.release_date }}</p>
+                    <p><strong>Original Language:</strong> {{ movie.original_language }}</p>
+                </div>
+                <div>
+                    <strong>Genres:</strong>
+                    {% for genre in genres %}
+                    <span class="genre">{{ genre }}</span>
+                    {% endfor %}
+                </div>
+                <p>Your Rating: 
+                    {% if user_rating %}
+                        {{ user_rating }} / 5
+                    {% else %}
+                        Not rated
+                        <div class="rating-input">
+                            <input type="number" id="rating" name="rating" min="1" max="5" step="0.5" placeholder="Rate 1-5">
+                            <button id="submit-rating">Submit</button>
+                        </div>
+                    {% endif %}
+                </p>
+                <p>Average Rating: 
+                    <span id="average-rating">
+                        {% if average_rating %}
+                            {{ average_rating|floatformat:1 }} / 5
+                        {% else %}
+                            No ratings yet
+                        {% endif %}
+                    </span>
+                </p>
+            </div>
+        </div>
+        <button class="back-button" onclick="window.history.back()">Back to Movies</button>
+    </div>
+
+    {% if recommendations %}
+    <div class="recommendations">
+        <h2>Similar Movies You Might Like</h2>
+        <div class="recommendation-list">
+            {% for rec_movie in recommendations %}
+            <div class="recommendation-item">
+                <img src="https://image.tmdb.org/t/p/w500{{ rec_movie.poster_path }}" alt="{{ rec_movie.title }}">
+                <h3>{{ rec_movie.title }}</h3>
+                <a href="/movies/{{ rec_movie.id }}">View Details →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.getElementById('submit-rating').addEventListener('click', function() {
+        const rating = document.getElementById('rating').value;
+        if (rating >= 1 && rating <= 5) {
+            fetch('/rate_movie/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'userId': '{{ request.user.id }}',
+                    'movieId': '{{ movie.tmdbId }}',
+                    'rating': rating
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                location.reload();
+            });
+        } else {
+            alert('Please enter a rating between 1 and 5.');
+        }
+    });
+</script>
+
+{% endblock %}

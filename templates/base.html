@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Home{% endblock %}</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            padding: 10px;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+            border-radius: 4px;
+        }
+        .navbar .user-info {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'home' %}">Home</a>
+        <div>
+            {% if user.is_authenticated %}
+                <span class="user-info">Welcome, {{ user.username }}!</span>
+                <a href="{% url 'logouts' %}">Logout</a>
+            {% else %}
+                <a href="{% url 'logins' %}">Login</a>
+                <a href="{% url 'register' %}">Register</a>
+            {% endif %}
+        </div>
+    </div>
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<style>
+    /* IMDb-styled design */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #121212; /* Dark background */
+        color: #f5c518; /* Gold text color */
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Search container styles */
+    .search-container {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .search-container input {
+        padding: 10px;
+        width: 250px;
+        border-radius: 4px;
+        border: 1px solid #f5c518;
+        background-color: #1a1a1a;
+        color: #f5c518;
+    }
+
+    .search-container button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #f5c518;
+        color: #121212;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .search-container button:hover {
+        background-color: #ffd700; /* Brighter gold */
+    }
+
+    /* Movie cards container */
+    .movies-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .movie {
+        background-color: #1a1a1a;
+        border: 2px solid #f5c518;
+        border-radius: 8px;
+        padding: 16px;
+        width: 220px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+
+    .movie:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(245, 197, 24, 0.5);
+    }
+
+    .movie-poster-container {
+        width: 100%;
+        height: 330px;
+        overflow: hidden;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+
+    .movie-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .movie h2 {
+        color: #f5c518;
+        font-size: 1.2em;
+        margin: 10px 0;
+    }
+
+    .movie p {
+        color: #dddddd;
+        margin: 5px 0;
+    }
+
+    .genre {
+        display: inline-block;
+        background-color: #f5c518;
+        color: black;
+        border-radius: 3px;
+        padding: 4px 6px;
+        margin: 2px;
+        font-size: 0.9em;
+    }
+
+    /* Pagination container */
+    #pagination-container {
+        text-align: center;
+        margin: 20px;
+    }
+
+    #pagination-container button {
+        padding: 10px 16px;
+        margin: 0 5px;
+        border: none;
+        background-color: #f5c518;
+        color: #121212;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    #pagination-container button:hover {
+        background-color: #ffd700;
+    }
+
+    /* Additional styling for the liked movies by genre section */
+    .liked-movies-by-genre {
+        padding: 20px;
+        color: #f5c518;
+    }
+
+    .genre-section {
+        margin-bottom: 40px;
+    }
+
+    .genre-section h3 {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        color: #f5c518;
+    }
+
+    .movie {
+        background-color: #1a1a1a;
+        border: 2px solid #f5c518;
+        border-radius: 8px;
+        padding: 16px;
+        width: 220px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+
+    .movie:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(245, 197, 24, 0.5);
+    }
+
+    .movie-poster-container {
+        width: 100%;
+        height: 330px;
+        overflow: hidden;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+
+    .movie-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .movies-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+</style>
+
+<!-- Search Section -->
+<div class="search-container">
+    <input type="text" id="search-input" placeholder="Search for movies...">
+    <button id="search-button">Search</button>
+</div>
+
+<!-- All Movies Section -->
+<div class="movies-container" id="movies-container"></div>
+<div id="pagination-container"></div>
+<h2 id="pagination-container">Your Highly Rated Movies</h2>
+<!-- Top Rated Movies Section -->
+<div class="movies-container">
+    
+    {% for movie in rated_movies %}
+        <div class="movie" onclick="window.location.href='/movies/{{ movie.id }}/'">
+            <div class="movie-poster-container">
+                <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }} poster" class="movie-poster">
+            </div>
+            <h2>{{ movie.title }}</h2>
+ 
+			<p>Average Rating: {{ movie.average_rating|floatformat:1 }} ★</p>
+        </div>
+    {% empty %}
+        <p style="color: #dddddd; text-align: center;">No movies rated 4 or above yet. Start rating your favorites!</p>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const moviesContainer = document.getElementById("movies-container");
+    const paginationContainer = document.getElementById("pagination-container");
+    const searchButton = document.getElementById("search-button");
+    const searchInput = document.getElementById("search-input");
+
+    // Fetch movies from API
+    const fetchMovies = async (page = 1, query = "") => {
+        try {
+            const response = await fetch(`/api/movies/?page=${page}&search=${query}`);
+            const data = await response.json();
+            displayMovies(data.results);
+            setupPagination(data, page, query);
+        } catch (error) {
+            console.error("Error fetching movies:", error);
+        }
+    };
+
+    // Display movies
+    const displayMovies = (movies) => {
+        moviesContainer.innerHTML = "";
+        movies.forEach((movie) => {
+            const movieElement = document.createElement("div");
+            movieElement.className = "movie";
+            movieElement.dataset.movieId = movie.id;
+
+            const genres = movie.genres
+                .split(",")
+                .map((genre) => `<span class="genre">${genre}</span>`)
+                .join(" ");
+
+            // Use the movie's rating field
+            const rating = movie.ratings ? movie.ratings : "N/A";  // Check for rating
+
+            movieElement.innerHTML = `
+                <div class="movie-poster-container">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title} poster" class="movie-poster">
+                </div>
+                <h2>${movie.title}</h2>
+                <p>Genres: ${genres}</p>
+            `;
+
+            movieElement.addEventListener("click", () => {
+                window.location.href = `/movies/${movie.id}/`;
+            });
+
+            moviesContainer.appendChild(movieElement);
+        });
+    };
+
+    // Setup pagination
+    const setupPagination = (data, currentPage, query) => {
+        paginationContainer.innerHTML = "";
+
+        if (data.previous) {
+            const prevButton = document.createElement("button");
+            prevButton.textContent = "Previous";
+            prevButton.addEventListener("click", () => fetchMovies(currentPage - 1, query));
+            paginationContainer.appendChild(prevButton);
+        }
+
+        for (let i = 1; i <= data.total_pages; i++) {
+            const pageButton = document.createElement("button");
+            pageButton.textContent = i;
+            pageButton.className = i === currentPage ? "active" : "";
+            pageButton.addEventListener("click", () => fetchMovies(i, query));
+            paginationContainer.appendChild(pageButton);
+        }
+
+        if (data.next) {
+            const nextButton = document.createElement("button");
+            nextButton.textContent = "Next";
+            nextButton.addEventListener("click", () => fetchMovies(currentPage + 1, query));
+            paginationContainer.appendChild(nextButton);
+        }
+    };
+
+    // Handle search
+    searchButton.addEventListener("click", () => {
+        const query = searchInput.value.trim();
+        fetchMovies(1, query);
+    });
+
+    // Fetch movies on page load
+    fetchMovies();
+});
+</script>
+{% endblock %}
